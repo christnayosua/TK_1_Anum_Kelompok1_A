@@ -41,6 +41,8 @@ add_markdown(r"""# Tugas Kelompok 1 — Analisis Numerik (CSCM603117)
 **Fakultas Ilmu Komputer, Universitas Indonesia — Semester Gasal 2026/2027**  
 **Kelompok:** Kelompok Ganjil (Kode Data A — Metode QR: Householder Reflections)
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/christnayosua/TK_1_Anum_Kelompok1_A/blob/main/TK1_Anum_Kelompok1.ipynb)
+
 ---
 
 ### Pakta Integritas
@@ -87,6 +89,24 @@ import matplotlib.pyplot as plt
 
 # Konfigurasi presisi tampilan floating-point
 np.set_printoptions(precision=8, suppress=True)
+
+# 0. Deteksi otomatis lingkungan Google Colab & sinkronisasi dataset jika belum ada
+try:
+    import google.colab
+    IN_COLAB = True
+except ImportError:
+    IN_COLAB = False
+
+if IN_COLAB:
+    print("[Google Colab Terdeteksi] Memeriksa kelengkapan dataset...")
+    if not os.path.exists("Nomor 1") or not os.path.exists("Nomor 2"):
+        print("Mengunduh dataset otomatis dari repositori GitHub Kelompok 1...")
+        os.system("git clone --depth 1 https://github.com/christnayosua/TK_1_Anum_Kelompok1_A.git _temp_repo")
+        os.system("cp -r _temp_repo/'Nomor 1' ./ 2>/dev/null || true")
+        os.system("cp -r _temp_repo/'Nomor 2' ./ 2>/dev/null || true")
+        os.system("cp -r _temp_repo/figures ./ 2>/dev/null || true")
+        os.system("rm -rf _temp_repo")
+        print("Dataset berhasil disinkronkan ke direktori kerja Colab (/content)!")
 
 # 1. Ekstraksi otomatis berkas zip jika dijalankan di Colab (/content/) atau direktori lokal
 zip_files = glob.glob("/content/*.zip") + glob.glob("*.zip")

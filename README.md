@@ -1,7 +1,9 @@
 # Petunjuk Eksekusi Program (README)
 ## Tugas Kelompok 1 — Analisis Numerik Gasal 2026/2027
 **Fakultas Ilmu Komputer, Universitas Indonesia**  
-**Kelompok:** Kelompok Ganjil (Kode Data: A, Metode QR: Householder Reflections)
+**Kelompok:** Kelompok Ganjil (Kode Data: A, Metode QR: Householder Reflections)  
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/christnayosua/TK_1_Anum_Kelompok1_A/blob/main/TK1_Anum_Kelompok1.ipynb)
 
 ---
 
