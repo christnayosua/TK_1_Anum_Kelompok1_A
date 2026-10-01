@@ -75,8 +75,11 @@ add_markdown(r"""# Tugas Kelompok 1 — Analisis Numerik (CSCM603117)
    - **(vii)** Interpretasi Finansial Parameter (*Momentum Persistence* vs *Technical Rebound*) & Visualisasi Deret Waktu Interaktif
 """)
 
-add_markdown(r"""## 0. Setup Lingkungan dan Pemuatan Dataset
-Notebook ini dirancang adaptif: dapat dijalankan di lingkungan **Google Colab** maupun lokal. Seluruh algoritma diimplementasikan **from scratch** menggunakan struktur array dasar tanpa mengandalkan fungsi solver bawaan (`scipy.linalg` atau `numpy.linalg.solve`).
+add_markdown(r"""## 0. Setup Lingkungan dan Sistem Manajemen Dataset Otomatis
+Notebook ini dirancang sepenuhnya adaptif untuk dieksekusi di **Google Colab** maupun mesin **Lokal**:
+- **Otomasi Zip di Google Colab:** Jika Anda mengunggah berkas zip asli (`Nomor 1-*.zip` dan `Nomor 2-*.zip`) ke Colab (`/content/`), sistem akan secara otomatis mengekstraknya, memverifikasi integritas 6 matriks transisi dan data saham, lalu **menghapus berkas zip** untuk menjaga ruang penyimpanan disk virtual Colab tetap bersih.
+- **Sinkronisasi Repositori Cadangan:** Jika berkas zip tidak diunggah di Colab, notebook akan otomatis mengunduh dataset resmi dari repositori GitHub Kelompok 1.
+- **Deteksi Lokal:** Di lingkungan lokal, notebook akan otomatis mendeteksi dataset pada hierarki folder proyek tanpa mengutak-atik berkas lokal.
 """)
 
 add_code(r"""import os
@@ -90,68 +93,109 @@ import matplotlib.pyplot as plt
 # Konfigurasi presisi tampilan floating-point
 np.set_printoptions(precision=8, suppress=True)
 
-# 0. Deteksi otomatis lingkungan Google Colab & sinkronisasi dataset jika belum ada
+# 0. Deteksi lingkungan runtime (Google Colab vs Lokal)
 try:
     import google.colab
     IN_COLAB = True
 except ImportError:
     IN_COLAB = False
 
-if IN_COLAB:
-    print("[Google Colab Terdeteksi] Memeriksa kelengkapan dataset...")
-    if not os.path.exists("Nomor 1") or not os.path.exists("Nomor 2"):
-        print("Mengunduh dataset otomatis dari repositori GitHub Kelompok 1...")
-        os.system("git clone --depth 1 https://github.com/christnayosua/TK_1_Anum_Kelompok1_A.git _temp_repo")
-        os.system("cp -r _temp_repo/'Nomor 1' ./ 2>/dev/null || true")
-        os.system("cp -r _temp_repo/'Nomor 2' ./ 2>/dev/null || true")
-        os.system("cp -r _temp_repo/figures ./ 2>/dev/null || true")
-        os.system("rm -rf _temp_repo")
-        print("Dataset berhasil disinkronkan ke direktori kerja Colab (/content)!")
-
-# 1. Ekstraksi otomatis berkas zip jika dijalankan di Colab (/content/) atau direktori lokal
-zip_files = glob.glob("/content/*.zip") + glob.glob("*.zip")
-for zfile in zip_files:
-    if "Nomor" in zfile or "dataset" in zfile.lower():
-        print(f"Mengekstrak berkas zip: {zfile}...")
-        try:
-            with zipfile.ZipFile(zfile, 'r') as zip_ref:
-                dest = "/content" if os.path.exists("/content") else os.getcwd()
-                zip_ref.extractall(dest)
-        except Exception as e:
-            print(f"Peringatan saat ekstrak {zfile}: {e}")
-
-# 2. Deteksi direktori dataset adaptif (mendukung hierarki lokal, root, dan notebook/)
-def get_data_paths():
-    current_dir = os.getcwd()
-    parent_dir = os.path.dirname(current_dir)
+def verify_dataset_integrity(base_dir=None):
+    '''
+    Memeriksa ketersediaan dan integritas dataset:
+    - Nomor 1 (Kode A): Minimal 6 berkas matriks transisi (T_16 s.d. T_512)
+    - Nomor 2: Berkas deret waktu harga (stock_train.csv dan stock_test.csv)
+    '''
+    if base_dir is None:
+        base_dir = os.getcwd()
+    parent_dir = os.path.dirname(base_dir)
     
     candidates_no1 = [
-        os.path.join(current_dir, "Nomor 1", "A"),
-        os.path.join(current_dir, "Nomor 1", "Nomor 1", "A"),
+        os.path.join(base_dir, "Nomor 1", "A"),
+        os.path.join(base_dir, "Nomor 1", "Nomor 1", "A"),
         os.path.join(parent_dir, "Nomor 1", "A"),
         os.path.join(parent_dir, "Nomor 1", "Nomor 1", "A"),
         "/content/Nomor 1/A",
         "/content/Nomor 1/Nomor 1/A",
-        os.path.join(current_dir, "A")
+        os.path.join(base_dir, "A")
     ]
     candidates_no2 = [
-        os.path.join(current_dir, "Nomor 2"),
-        os.path.join(current_dir, "Nomor 2", "Nomor 2"),
+        os.path.join(base_dir, "Nomor 2"),
+        os.path.join(base_dir, "Nomor 2", "Nomor 2"),
         os.path.join(parent_dir, "Nomor 2"),
         os.path.join(parent_dir, "Nomor 2", "Nomor 2"),
         "/content/Nomor 2",
         "/content/Nomor 2/Nomor 2",
-        current_dir
+        base_dir
     ]
     
-    path_no1 = next((p for p in candidates_no1 if os.path.exists(p) and len(glob.glob(os.path.join(p, "*.csv"))) > 0), None)
-    path_no2 = next((p for p in candidates_no2 if os.path.exists(os.path.join(p, "stock_train.csv"))), None)
+    p1 = next((p for p in candidates_no1 if os.path.exists(p) and len(glob.glob(os.path.join(p, "*.csv"))) >= 6), None)
+    p2 = next((p for p in candidates_no2 if os.path.exists(os.path.join(p, "stock_train.csv")) and os.path.exists(os.path.join(p, "stock_test.csv"))), None)
     
-    return path_no1, path_no2
+    is_valid = (p1 is not None) and (p2 is not None)
+    return is_valid, p1, p2
 
-path_no1, path_no2 = get_data_paths()
-print(f"[STATUS] Path Dataset Nomor 1 (A) : {path_no1}")
-print(f"[STATUS] Path Dataset Nomor 2     : {path_no2}")
+def find_target_zip_files():
+    '''Mencari berkas arsip zip dataset di direktori kerja atau /content/.'''
+    patterns = ["/content/*.zip", "*.zip", "*Nomor*.zip"]
+    found_zips = set()
+    for pat in patterns:
+        for f in glob.glob(pat):
+            base = os.path.basename(f).lower()
+            if "nomor" in base or "dataset" in base:
+                found_zips.add(os.path.abspath(f))
+    return sorted(list(found_zips))
+
+# 1. Evaluasi status ketersediaan dataset saat ini
+is_ready, path_no1, path_no2 = verify_dataset_integrity()
+
+# 2. Jika belum lengkap, periksa keberadaan berkas zip yang diunggah pengguna
+zip_candidates = find_target_zip_files()
+
+if (not is_ready) and len(zip_candidates) > 0:
+    print(f"[EKSTRAKSI] Terdeteksi {len(zip_candidates)} berkas zip diunggah. Memulai ekstraksi otomatis...")
+    dest_dir = "/content" if IN_COLAB else os.getcwd()
+    for zfile in zip_candidates:
+        print(f" -> Mengekstrak berkas: {os.path.basename(zfile)} ke '{dest_dir}'...")
+        try:
+            with zipfile.ZipFile(zfile, 'r') as zip_ref:
+                zip_ref.extractall(dest_dir)
+        except Exception as e:
+            print(f" [!] Peringatan ekstraksi {zfile}: {e}")
+            
+    # Evaluasi ulang integritas pasca-ekstraksi
+    is_ready, path_no1, path_no2 = verify_dataset_integrity()
+
+# 3. Jika belum lengkap dan tidak ada berkas zip (misal akses langsung Colab via URL GitHub)
+if (not is_ready) and IN_COLAB:
+    print("[DOWNLOAD] Dataset belum ditemukan. Mengunduh otomatis dari repositori GitHub Kelompok 1...")
+    os.system("git clone --depth 1 https://github.com/christnayosua/TK_1_Anum_Kelompok1_A.git _temp_repo")
+    os.system("cp -r _temp_repo/'Nomor 1' ./ 2>/dev/null || true")
+    os.system("cp -r _temp_repo/'Nomor 2' ./ 2>/dev/null || true")
+    os.system("cp -r _temp_repo/figures ./ 2>/dev/null || true")
+    os.system("rm -rf _temp_repo")
+    is_ready, path_no1, path_no2 = verify_dataset_integrity()
+
+# 4. Hapus berkas zip jika dataset sudah terverifikasi lengkap (khusus lingkungan Google Colab)
+if is_ready and IN_COLAB:
+    zips_to_remove = find_target_zip_files()
+    if len(zips_to_remove) > 0:
+        print(f"[PEMBERSIHAN] Dataset telah terverifikasi utuh & valid. Menghapus {len(zips_to_remove)} berkas zip untuk efisiensi penyimpanan Colab...")
+        for z in zips_to_remove:
+            try:
+                os.remove(z)
+                print(f" -> Berkas zip berhasil dibersihkan: {os.path.basename(z)}")
+            except Exception as e:
+                print(f" [!] Gagal menghapus {z}: {e}")
+
+# Output Laporan Status Dataset
+print("\n" + "="*70)
+print("HASIL PEMERIKSAAN DAN VALIDASI DATASET:")
+print(f" -> Lingkungan Runtime          : {'Google Colab' if IN_COLAB else 'Lokal'}")
+print(f" -> Status Kesiapan             : {'SIAP DIGUNAKAN (Lengkap & Valid)' if is_ready else 'PERINGATAN: Dataset Belum Lengkap'}")
+print(f" -> Path Matriks Transisi (A)   : {path_no1}")
+print(f" -> Path Deret Saham SETAR      : {path_no2}")
+print("="*70)
 """)
 
 # =========================================================================

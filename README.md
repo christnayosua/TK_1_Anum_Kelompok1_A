@@ -109,10 +109,19 @@ python src/convert_to_docx.py
   jupyter notebook TK1_Anum_Kelompok1.ipynb
   ```
 - **Eksekusi di Google Colab**:
-  1. Buka [Google Colab](https://colab.research.google.com/).
-  2. Unggah berkas `TK1_Anum_Kelompok1.ipynb` dari folder `notebook/` (atau langsung dari root).
-  3. Unggah folder dataset `Nomor 1/` dan `Nomor 2/` ke file explorer Colab (`/content/`).
-  4. Jalankan seluruh *cells* secara berurutan (*Runtime -> Run all*). Seluruh visualisasi grafik dan tabel komparasi numerik akan langsung dirender secara interaktif.
+  - **Opsi 1 (1-Klik via GitHub - Paling Praktis):**
+    Klik badge `Open in Colab` di bagian atas dokumen ini, atau buka tautan:
+    `https://colab.research.google.com/github/christnayosua/TK_1_Anum_Kelompok1_A/blob/main/TK1_Anum_Kelompok1.ipynb`
+    Pilih menu *Runtime -> Run all*. Dataset akan otomatis tersinkronisasi.
+  - **Opsi 2 (Unggah Berkas Notebook & Zip Dataset Asli):**
+    1. Buka [Google Colab](https://colab.research.google.com/) dan unggah `TK1_Anum_Kelompok1.ipynb`.
+    2. Buka panel berkas di sisi kiri (`Files / Folder`), lalu seret dan lepas (*drag-and-drop*) berkas zip dataset:
+       - `Nomor 1-20260922T022122Z-1-001.zip`
+       - `Nomor 2-20260922T022122Z-1-001.zip`
+    3. Jalankan sel pertama (*Runtime -> Run all*). Sistem akan secara otomatis:
+       - Mendeteksi dan mengekstrak berkas zip tersebut.
+       - Memvalidasi keutuhan seluruh 6 matriks transisi ($T_{16} \dots T_{512}$) dan berkas harga saham.
+       - Menghapus kedua berkas zip setelah validasi sukses untuk menghemat kapasitas disk Colab.
 
 ---
 
