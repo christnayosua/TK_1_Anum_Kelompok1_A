@@ -235,7 +235,11 @@ def compute_errors(T: np.ndarray, pi: np.ndarray) -> tuple[float, float]:
 
 if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    data_dir = os.path.join(base_dir, "Nomor 1", "Nomor 1", "A")
+    candidates = [
+        os.path.join(base_dir, "Nomor 1", "A"),
+        os.path.join(base_dir, "Nomor 1", "Nomor 1", "A")
+    ]
+    data_dir = next((p for p in candidates if os.path.exists(os.path.join(p, "T_16.csv"))), candidates[0])
     
     print("=========================================================================")
     print("EKSPERIMEN SOLVER SPL NOMOR 1 (KELOMPOK GANJIL) - DATASET KODE A")

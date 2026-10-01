@@ -41,6 +41,28 @@ from no2_solver import (
     solve_householder_qr
 )
 
+def get_dataset_paths():
+    candidates_no1 = [
+        os.path.join(base_dir, 'Nomor 1', 'A'),
+        os.path.join(base_dir, 'Nomor 1', 'Nomor 1', 'A')
+    ]
+    dir_no1 = next((p for p in candidates_no1 if os.path.exists(os.path.join(p, 'T_16.csv'))), candidates_no1[0])
+    
+    candidates_train = [
+        os.path.join(base_dir, 'Nomor 2', 'stock_train.csv'),
+        os.path.join(base_dir, 'Nomor 2', 'Nomor 2', 'stock_train.csv')
+    ]
+    f_train = next((p for p in candidates_train if os.path.exists(p)), candidates_train[0])
+    
+    candidates_test = [
+        os.path.join(base_dir, 'Nomor 2', 'stock_test.csv'),
+        os.path.join(base_dir, 'Nomor 2', 'Nomor 2', 'stock_test.csv')
+    ]
+    f_test = next((p for p in candidates_test if os.path.exists(p)), candidates_test[0])
+    return dir_no1, f_train, f_test
+
+dir_no1, train_csv_path, test_csv_path = get_dataset_paths()
+
 # =========================================================================
 # 1. GRAFIK DISTRIBUSI STASIONER HALTE (FIG 1)
 # =========================================================================
@@ -49,7 +71,7 @@ def generate_fig1():
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5), dpi=300)
     
     # Subplot A: Kasus N = 16 (Detail Halte 1 sampai 16)
-    csv_16 = os.path.join(base_dir, 'Nomor 1', 'Nomor 1', 'A', 'T_16.csv')
+    csv_16 = os.path.join(dir_no1, 'T_16.csv')
     T16 = load_transition_matrix(csv_16)
     B16, b16 = construct_B_and_b(T16)
     z16 = solve_banded_thomas_pp(B16, b16)
@@ -81,7 +103,7 @@ def generate_fig1():
     sizes = [16, 32, 64, 128, 256, 512]
     
     for idx, N in enumerate(sizes):
-        csv_path = os.path.join(base_dir, 'Nomor 1', 'Nomor 1', 'A', f'T_{N}.csv')
+        csv_path = os.path.join(dir_no1, f'T_{N}.csv')
         T = load_transition_matrix(csv_path)
         B, b = construct_B_and_b(T)
         z = solve_banded_thomas_pp(B, b)
@@ -113,7 +135,7 @@ def generate_fig2():
     t_banded_list = []
     
     for N in sizes:
-        csv_path = os.path.join(base_dir, 'Nomor 1', 'Nomor 1', 'A', f'T_{N}.csv')
+        csv_path = os.path.join(dir_no1, f'T_{N}.csv')
         T = load_transition_matrix(csv_path)
         B, b = construct_B_and_b(T)
         
@@ -183,7 +205,7 @@ def generate_fig2():
 # =========================================================================
 def generate_fig3():
     print("Membuat Gambar 3: Overlay Return Model SETAR (Data Latih)...")
-    train_csv = os.path.join(base_dir, 'Nomor 2', 'Nomor 2', 'stock_train.csv')
+    train_csv = train_csv_path
     A, b, returns, dates = load_and_preprocess_stock(train_csv)
     
     res_qr = solve_householder_qr(A, b)
@@ -242,8 +264,8 @@ def generate_fig3():
 # =========================================================================
 def generate_fig4():
     print("Membuat Gambar 4: Grafik Kontinu Deret Waktu (Train vs Test Overlay)...")
-    train_csv = os.path.join(base_dir, 'Nomor 2', 'Nomor 2', 'stock_train.csv')
-    test_csv = os.path.join(base_dir, 'Nomor 2', 'Nomor 2', 'stock_test.csv')
+    train_csv = train_csv_path
+    test_csv = test_csv_path
     
     df_tr = pd.read_csv(train_csv)
     df_te = pd.read_csv(test_csv)

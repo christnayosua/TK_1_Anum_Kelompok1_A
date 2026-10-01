@@ -24,6 +24,8 @@ from no1_solver import (
 from no2_solver import (
     load_and_preprocess_stock,
     solve_normal_equations,
+    demonstrate_gaussian_elimination_inconsistency,
+    solve_iterative_refinement,
     householder_reflection_step1,
     solve_householder_qr,
     evaluate_out_of_sample
@@ -34,7 +36,11 @@ def test_nomor_1():
     print("TEST SUITE: NOMOR 1 (DENSE LU VS BANDED THOMAS PP)")
     print("==================================================")
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    data_dir = os.path.join(base_dir, "Nomor 1", "Nomor 1", "A")
+    candidates_no1 = [
+        os.path.join(base_dir, "Nomor 1", "A"),
+        os.path.join(base_dir, "Nomor 1", "Nomor 1", "A")
+    ]
+    data_dir = next((p for p in candidates_no1 if os.path.exists(os.path.join(p, "T_16.csv"))), candidates_no1[0])
     
     sizes = [16, 32, 64, 128, 256, 512]
     
@@ -85,8 +91,17 @@ def test_nomor_2():
     print("TEST SUITE: NOMOR 2 (NORMAL EQ, QR & OUT-OF-SAMPLE)")
     print("==================================================")
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    train_csv = os.path.join(base_dir, "Nomor 2", "Nomor 2", "stock_train.csv")
-    test_csv = os.path.join(base_dir, "Nomor 2", "Nomor 2", "stock_test.csv")
+    candidates_train = [
+        os.path.join(base_dir, "Nomor 2", "stock_train.csv"),
+        os.path.join(base_dir, "Nomor 2", "Nomor 2", "stock_train.csv")
+    ]
+    train_csv = next((p for p in candidates_train if os.path.exists(p)), candidates_train[0])
+    
+    candidates_test = [
+        os.path.join(base_dir, "Nomor 2", "stock_test.csv"),
+        os.path.join(base_dir, "Nomor 2", "Nomor 2", "stock_test.csv")
+    ]
+    test_csv = next((p for p in candidates_test if os.path.exists(p)), candidates_test[0])
     assert os.path.exists(train_csv), f"File {train_csv} not found!"
     assert os.path.exists(test_csv), f"File {test_csv} not found!"
     
@@ -94,12 +109,23 @@ def test_nomor_2():
     assert A.shape == (300, 6), f"Bentuk A salah: {A.shape}"
     assert b.shape == (300,), f"Bentuk b salah: {b.shape}"
     
+    # 0. Test Gaussian Elimination Inconsistency
+    res_incons = demonstrate_gaussian_elimination_inconsistency(A, b)
+    assert not res_incons['is_consistent'], "Sistem overdetermined seharusnya tidak konsisten!"
+    print(f"[TEST N2 Inconsistency] Rank={res_incons['rank']}, Max Inconsistent Res={res_incons['max_inconsistent_residual']:.4f}")
+
     # 1. Test Normal Equations
     res_norm = solve_normal_equations(A, b)
     assert res_norm['cond_A'] > 100, "Condition number A tidak valid"
     assert abs(res_norm['cond_ATA'] - (res_norm['cond_A']**2)) / res_norm['cond_ATA'] < 1e-3, "cond(ATA) bukan kuadrat cond(A)"
     print(f"[TEST N2 Normal] cond(A)={res_norm['cond_A']:.2f}, cond(ATA)={res_norm['cond_ATA']:.2f}")
     
+    # 1b. Test Iterative Error Refinement
+    res_refine = solve_iterative_refinement(A, b, max_iter=2)
+    delta_norm_1 = res_refine['history'][1]['correction_norm']
+    print(f"[TEST N2 Iterative Refinement] Correction Norm Iter 1: {delta_norm_1:.2e}")
+    assert delta_norm_1 < 1e-14, f"Koreksi refinement seharusnya mendekati presisi mesin: {delta_norm_1}"
+
     # 2. Test H1 Reflection
     res_h1 = householder_reflection_step1(A)
     print(f"[TEST N2 H1] Max subdiagonal error: {res_h1['max_subdiag_error']:.2e}")

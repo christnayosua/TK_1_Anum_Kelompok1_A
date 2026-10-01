@@ -1,6 +1,6 @@
 """
 Program: convert_to_docx.py
-Deskripsi: Mengonversi TK1_Bagian_Yosua_Technical_Report.md ke berkas Microsoft Word (.docx)
+Deskripsi: Mengonversi TK1_Laporan_Lengkap_Technical_Report.md ke berkas Microsoft Word (.docx)
            agar dapat diunggah ke Google Drive dan dibuka via Google Docs tanpa berantakan.
 """
 
@@ -14,7 +14,7 @@ from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-md_path = os.path.join(base_dir, 'TK1_Bagian_Yosua_Technical_Report.md')
+md_path = os.path.join(base_dir, 'TK1_Laporan_Lengkap_Technical_Report.md')
 docx_path = os.path.join(base_dir, 'TK1_Technical_Report.docx')
 
 doc = Document()
